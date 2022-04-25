@@ -4,7 +4,11 @@
 <div class="col-md-4 col-md-offset-4">
     <h1>Todo List:</h1>
     <table class="table table-striped">
-        <th>#</th><th>User</th><th>Description</th><th></th>
+        <th>#</th>
+        <th>User</th>
+        <th>Description</th>
+        <th>Completed</th>
+        <th>Remove</th>
         {% for todo in todos %}
             <tr>
                 <td>{{ todo.id }}</td>
@@ -13,6 +17,13 @@
                     <a href="{{ app.request.baseurl }}/todo/{{ todo.id }}">
                        {{ todo.description }}
                     </a>
+                </td>
+                <td>
+                    <form method="post" action="/todo/togglecomplete/{{ todo.id }}">
+                        <button type="submit" class="todo-{{ todo.completed ? 'complete' : 'incomplete' }} btn btn-xs btn-danger">
+                            <span class="todo-{{ todo.completed ? 'complete' : 'incomplete' }} glyphicon glyphicon-{{ todo.completed ? 'ok' : 'remove' }} glyphicon-white"></span>
+                        </button>
+                    </form>
                 </td>
                 <td>
                     <form method="post" action="{{ app.request.baseurl }}/todo/delete/{{ todo.id }}">
@@ -39,6 +50,13 @@
                 </div>
                 <!-- end of error -->
             </form>
+        </tr>
+        <tr>
+            {% for message in app.session.flashbag.get('todoSuccess') %}
+                <div class="alert alert-success" role="alert">
+                    {{ message | escape }}
+                </div>
+            {% endfor %}
         </tr>
     </table>
 </div>

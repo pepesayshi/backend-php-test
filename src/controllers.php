@@ -147,3 +147,33 @@ $app->match('/todo/delete/{id}', function ($id) use ($app) {
 
     return $app->redirect('/todo');
 });
+
+$app->post('/todo/togglecomplete/{id}', function ($id) use ($app) {
+
+    // check if user is logged in
+    if (null === $user = $app['session']->get('user')) {
+        // UX error handling
+        $app['session']->getFlashBag()->set('loginError', 'Oops, please login first to mark a todo.');
+        return $app->redirect('/login');
+    }
+
+    // 1. prepare statement to prevent sql injection
+    // 2. only allow user to mark/unmark their own post to be completed
+    $affectedrows = $app['db']->executeUpdate("
+        UPDATE `todos`
+        SET `completed` = 1 - `completed`
+        WHERE `id` = ?
+        AND `user_id` = ?
+    ", [$id, $user['id']]);
+
+    // success
+    if ($affectedrows) {
+        $app['session']->getFlashBag()->set('todoSuccess', 'Todo has been marked successfully.');
+        return $app->redirect('/todo');
+    }
+
+    // else error
+    $app['session']->getFlashBag()->set('formErrors', 'Oops, something has gone wrong, please try again.');
+    return $app->redirect('/todo');
+
+});
