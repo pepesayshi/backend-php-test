@@ -21,26 +21,45 @@ $app->match('/login', function (Request $request) use ($app) {
     $username = $request->get('username');
     $password = $request->get('password');
 
-    if ($username) {
+    if (empty($username) || empty($password)) {
 
-        // 1. only select the columns needed for query performance (dont save password in the session)
-        // 2. prepare statement to prevent sql injection & fetch record
-        // 3. hashed password was stored in db for security reasons
-        $user = $app['db']->fetchAssoc("
-            SELECT `id`, `username`
-            FROM `users` 
-            WHERE `username` = ? 
-            AND `password` = ?
-        ", [$username, md5($password)]);
-
-        if ($user){
-            $app['session']->set('user', $user);
-            return $app->redirect('/todo');
-        }
-
+        // create a crsf token
+        $token = md5(uniqid(mt_rand(), true));
+        // save into session
+        $app['session']->set('crsftokenlogin', $token);
+        
+        // inject the token into the data to be used by the form
+        return $app['twig']->render('login.html', [
+            'crsftokenlogin' => $token
+        ]);
+    }
+    
+    // verify crsf first, redirect with error
+    if ($app['session']->get('crsftokenlogin') != $request->get('token')) {
+        $app['session']->getFlashBag()->set('loginError', 'Please reload the page and try again.');
+        return $app->redirect('/login');
     }
 
-    return $app['twig']->render('login.html', array());
+    // 1. only select the columns needed for query performance (dont save password in the session)
+    // 2. prepare statement to prevent sql injection & fetch record
+    // 3. hashed password was stored in db for security reasons
+    $user = $app['db']->fetchAssoc("
+        SELECT `id`, `username`
+        FROM `users` 
+        WHERE `username` = ? 
+        AND `password` = ?
+    ", [$username, md5($password)]);
+
+    // only redirect on success
+    if ($user){
+        $app['session']->set('user', $user);
+        return $app->redirect('/todo');
+    }
+
+    // error
+    $app['session']->getFlashBag()->set('loginError', 'Cant find the user, Please try again.');
+    return $app->redirect('/login');
+
 });
 
 
@@ -73,6 +92,11 @@ $app->get('/todo/{id}', function ($id) use ($app) {
 
     } else {
 
+        // create a crsf token
+        $token = md5(uniqid(mt_rand(), true));
+        // save into session
+        $app['session']->set('crsftokentodos', $token);
+
         // 1. prepare statement to prevent sql injection & fetch record
         // 2. handle exception - if $user['id'] is undefined for some reason, see no post
         $todos = $app['db']->fetchAll("
@@ -83,6 +107,7 @@ $app->get('/todo/{id}', function ($id) use ($app) {
 
         return $app['twig']->render('todos.html', [
             'todos' => $todos,
+            'crsftokentodos' => $token
         ]);
     }
 })
@@ -110,6 +135,13 @@ $app->post('/todo/add', function (Request $request) use ($app) {
             'description' => 'Please provide a description.',
         ];
     };
+
+    // verify crsf first, redirect with error
+    if ($app['session']->get('crsftokentodos') != $request->get('token')) {
+        $errors = [
+            'token' => 'Please reload the page and try again.'
+        ];
+    }
 
     // more errors etc...
 
