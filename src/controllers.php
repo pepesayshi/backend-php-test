@@ -53,6 +53,8 @@ $app->get('/logout', function () use ($app) {
 $app->get('/todo/{id}', function ($id) use ($app) {
 
     if (null === $user = $app['session']->get('user')) {
+        // UX error handling
+        $app['session']->getFlashBag()->set('loginError', 'Oops, please login first to view the list.');
         return $app->redirect('/login');
     }
 
@@ -90,11 +92,17 @@ $app->get('/todo/{id}', function ($id) use ($app) {
 $app->post('/todo/add', function (Request $request) use ($app) {
 
     if (null === $user = $app['session']->get('user')) {
+        // UX error handling
+        $app['session']->getFlashBag()->set('loginError', 'Oops, please login first to view the list.');
         return $app->redirect('/login');
     }
 
-    // in case its undefined
-    $user_id = $user['id'] ?? null;
+    // exception handle 
+    // in case $user['id'] is undefined
+    if (empty($user_id = ($user['id'] ?? null))) {
+        $app['session']->getFlashBag()->set('loginError', 'Oops, Can not find your user id, please re-login.');
+        return $app->redirect('/login');
+    };
 
     // can't post if empty
     if (empty($description = $request->get('description'))) {
@@ -123,6 +131,13 @@ $app->post('/todo/add', function (Request $request) use ($app) {
 
 
 $app->match('/todo/delete/{id}', function ($id) use ($app) {
+
+    // check if user is logged in
+    if (null === $user = $app['session']->get('user')) {
+        // UX error handling
+        $app['session']->getFlashBag()->set('loginError', 'Oops, please login first to delete a todo.');
+        return $app->redirect('/login');
+    }
 
     // prepare statement to prevent sql injection
     $affectedrows = $app['db']->executeUpdate("

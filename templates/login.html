@@ -18,7 +18,14 @@
                     <button type="submit" class="btn btn-primary pull-right"><i class="glyphicon glyphicon-log-in"></i> login</button>
                 </div>
             </div>
-
+            <!-- error meesage -->
+            <div class="error">
+                {% for error in app.session.flashbag.get('loginError') %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error | escape }}
+                    </div>
+                {% endfor %}
+            </div>
         </form>
     </div>
 {% endblock %}
