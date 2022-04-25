@@ -70,5 +70,14 @@
             {% endfor %}
         </tr>
     </table>
+    <div class="todo-pagination">
+        <ul class="pagination justify-content-center">
+            {% for page in range(1, pagination.totalpages) %}
+                <li class="{{ pagination.currentpage == page ? 'active' : null }}">
+                    <a href="?p={{ page }}">{{ page | escape }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 {% endblock %}

@@ -3,6 +3,8 @@
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+const PAGE_SIZE = 3;
+
 $app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
     $twig->addGlobal('user', $app['session']->get('user'));
     return $twig;
@@ -69,7 +71,7 @@ $app->get('/logout', function () use ($app) {
 });
 
 
-$app->get('/todo/{id}', function ($id) use ($app) {
+$app->get('/todo/{id}', function (Request $request, $id) use ($app) {
 
     if (null === $user = $app['session']->get('user')) {
         // UX error handling
@@ -105,10 +107,23 @@ $app->get('/todo/{id}', function ($id) use ($app) {
             WHERE `user_id` = ?
         ", [$user['id'] ?? null]);
 
+        // get curent page - positive NUMBER only (escape string with intval)
+        $currentpage = abs(intval($request->get('p'))) ?: 1;
+
+        // divide the total todos in pages
+        $paginatedtodo = array_chunk($todos, PAGE_SIZE);
+  
         return $app['twig']->render('todos.html', [
-            'todos' => $todos,
+            // only return the todos for current page
+            'todos' => $paginatedtodo[$currentpage - 1] ?? [],
+            'pagination' => [
+                'currentpage' => $currentpage,
+                // work out total pages
+                'totalpages' => ceil(count($todos) / PAGE_SIZE)
+            ],
             'crsftokentodos' => $token
         ]);
+
     }
 })
 ->value('id', null);
@@ -163,8 +178,8 @@ $app->post('/todo/add', function (Request $request) use ($app) {
     return $app->redirect('/todo');
 });
 
-
-$app->match('/todo/delete/{id}', function ($id) use ($app) {
+// form post only for deleting
+$app->post('/todo/delete/{id}', function ($id) use ($app) {
 
     // check if user is logged in
     if (null === $user = $app['session']->get('user')) {
