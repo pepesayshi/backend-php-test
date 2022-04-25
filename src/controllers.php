@@ -158,6 +158,8 @@ $app->post('/todo/add', function (Request $request) use ($app) {
         VALUES (?, ?)
     ", [$user_id, $description]);
 
+    // add success message when to do is added
+    $app['session']->getFlashBag()->set('todoSuccess', 'Todo has been added successfully.');
     return $app->redirect('/todo');
 });
 
@@ -171,12 +173,17 @@ $app->match('/todo/delete/{id}', function ($id) use ($app) {
         return $app->redirect('/login');
     }
 
-    // prepare statement to prevent sql injection
+    // 1. prepare statement to prevent sql injection
+    // 2. in case user['id'] is somehow undefined
+    // 3. can only delete a todo if its the author
     $affectedrows = $app['db']->executeUpdate("
         DELETE FROM `todos`
         WHERE `id` = ?
-    ", [$id]);
+        AND `user_id` = ?
+    ", [$id, ($user['id'] ?? null)]);
 
+    // add success message when to do is deleted
+    $app['session']->getFlashBag()->set('todoSuccess', 'Todo has been deleted successfully.');
     return $app->redirect('/todo');
 });
 
