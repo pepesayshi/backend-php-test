@@ -209,3 +209,24 @@ $app->post('/todo/togglecomplete/{id}', function ($id) use ($app) {
     return $app->redirect('/todo');
 
 });
+
+$app->get('/todo/{id}/json', function ($id) use ($app) {
+    
+    // check if user is logged in
+    if (null === $user = $app['session']->get('user')) {
+       // UX error handling
+       $app['session']->getFlashBag()->set('loginError', 'Oops, please login first to view json.');
+       return $app->redirect('/login');
+   }
+
+   // 1. prepare statement to prevent sql injection
+   // 2. only allow user to view their own todo in json
+   $todo = $app['db']->fetchAssoc("
+       SELECT `id`, `user_id`, `description`
+       FROM `todos`
+       WHERE `id` = ?
+       AND `user_id` = ?
+   ", [$id, $user['id']]);
+
+   return $app->json($todo ?: 'no todo has been found');
+});
