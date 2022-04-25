@@ -29,6 +29,15 @@
                 <td>
                     <button type="submit" class="btn btn-sm btn-primary">Add</button>
                 </td>
+                <!-- error -->
+                <div class="error">
+                    {% for error in app.session.flashbag.get('formErrors') %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ error | escape }}
+                        </div>
+                    {% endfor %}
+                </div>
+                <!-- end of error -->
             </form>
         </tr>
     </table>

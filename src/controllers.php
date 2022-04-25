@@ -95,7 +95,21 @@ $app->post('/todo/add', function (Request $request) use ($app) {
 
     // in case its undefined
     $user_id = $user['id'] ?? null;
-    $description = $request->get('description');
+
+    // can't post if empty
+    if (empty($description = $request->get('description'))) {
+        $errors = [
+            'description' => 'Please provide a description.',
+        ];
+    };
+
+    // more errors etc...
+
+    // if any errors are encountered - redirect
+    if (!empty($errors ?? [])) {
+        $app['session']->getFlashBag()->set('formErrors', $errors);
+        return $app->redirect('/todo');
+    }
 
     // prepare statement to insert
     $app['db']->executeUpdate("
