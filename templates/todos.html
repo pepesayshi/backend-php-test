@@ -1,83 +1,47 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="slide-in-animation col-md-8 col-md-offset-1">
+<div id="todos" v-cloak class="slide-in-animation col-md-8 col-md-offset-1">
     <h1>Todo List:</h1>
     <table class="table table-striped">
         <th>#</th>
         <th>User</th>
         <th>Description</th>
         <th>Completed</th>
-        <th>Json</th>
         <th>Remove</th>
-        {% for todo in todos %}
-            <tr>
-                <td>{{ todo.id | escape }}</td>
-                <td>{{ todo.user_id | escape }}</td>
-                <td>
-                    <a href="/todo/{{ todo.id }}">
-                       {{ todo.description | escape }}
-                    </a>
-                </td>
-                <td>
-                    <form method="post" action="/todo/togglecomplete/{{ todo.id }}">
-                        <button type="submit" class="todo-{{ todo.completed ? 'complete' : 'incomplete' }} btn btn-xs btn-danger">
-                            <span class="todo-{{ todo.completed ? 'complete' : 'incomplete' }} glyphicon glyphicon-{{ todo.completed ? 'ok' : 'remove' }} glyphicon-white"></span>
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <form method="get" action="/todo/{{ todo.id }}/json">
-                        <button type="submit" class="todo-json btn btn-xs">
-                            <span>View </span>
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <form method="post" action="/todo/delete/{{ todo.id }}">
-                        <button type="submit" class="todo-delete btn btn-xs btn-danger">
-                            <span class="glyphicon glyphicon-remove glyphicon-white"></span>
-                        </button>
-                    </form>
-                </td>
-            </tr>
-        {% endfor %}
-        <tr>
-            <form method="post" action="/todo/add">
-                <input type="hidden" name="token" value="{{ crsftokentodos }}">
-                <td colspan="5">
-                    <input type="textbox" name="description" class="todo-description small-6 small-center" placeholder="Description...">
-                </td>
-                <td>
-                    <button type="submit" class="todo-add btn btn-sm btn-primary">Add</button>
-                </td>
-                <!-- error -->
-                <div class="error">
-                    {% for error in app.session.flashbag.get('formErrors') %}
-                        <div class="alert alert-danger" role="alert">
-                            {{ error | escape }}
-                        </div>
-                    {% endfor %}
-                </div>
-                <!-- end of error -->
-            </form>
+        <tr v-for="(todo, index) in todos">
+            <td><template>[[ todo.id ]]</template></td>
+            <td><template>[[ todo.user_id ]]</template></td>
+            <td>
+                <a :href="'new/todo/' + todo.id">
+                    <template>[[ todo.description ]]</template>
+                </a>
+            </td>
+            <td>
+                <button @click="toggleComplete(todo.id)" :class="'btn btn-xs btn-danger todo-' + (todo.completed ? 'complete' : 'incomplete')">
+                    <span :class="'glyphicon glyphicon-white glyphicon-' + (todo.completed ? 'ok' : 'remove')"></span>
+                </button>
+            </td>
+            <td>
+                <button @click="deleteTodo(todo.id)" class="todo-delete btn btn-xs btn-danger">
+                    <span class="glyphicon glyphicon-remove glyphicon-white"></span>
+                </button>
+            </td>
         </tr>
-        <tr>
-            {% for message in app.session.flashbag.get('todoSuccess') %}
-                <div class="alert alert-success" role="alert">
-                    {{ message | escape }}
-                </div>
-            {% endfor %}
-        </tr>
+        <div class="alert alert-success" role="alert" v-if="form.success">
+            <template>[[ form.success ]]</template>
+        </div>
+        <div class="alert alert-danger" role="alert" v-if="form.error">
+            <template>[[ form.error ]]</template>
+        </div>
+        <input type="hidden" v-model="form.crsftokentodos" name="crsftokentodos">
+        <td colspan="4">
+            <input type="textbox" v-model="form.description" name="description" class="todo-description small-6 small-center" placeholder="Description...">
+        </td>
+        <td>
+            <button @click="addTodo" class="todo-add btn btn-sm btn-primary">Add</button>
+        </td>
     </table>
-    <div class="todo-pagination">
-        <ul class="pagination justify-content-center">
-            {% for page in range(1, pagination.totalpages) %}
-                <li class="{{ pagination.currentpage == page ? 'active' : null }}">
-                    <a href="?p={{ page }}">{{ page | escape }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
 </div>
+
 {% endblock %}
