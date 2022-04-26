@@ -2,6 +2,7 @@
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use \Classes\Site;
 
 const PAGE_SIZE = 3;
 
@@ -24,19 +25,13 @@ $app->match('/login', function (Request $request) use ($app) {
     $password = $request->get('password');
 
     if ($username) {
-        // 1. only select the columns needed for query performance (dont save password in the session)
-        // 2. prepare statement to prevent sql injection & fetch record
-        // 3. hashed password was stored in db for security reasons
-        $user = $app['db']->fetchAssoc("
-            SELECT `id`, `username`
-            FROM `users` 
-            WHERE `username` = ? 
-            AND `password` = ?
-        ", [$username, md5($password)]);
+        
+        $site = new Site;
 
-        // only redirect on success
-        if ($user){
+        // try to login
+        if ($user = $site->login($username, $password)){
             $app['session']->set('user', $user);
+            // only redirect on success
             return $app->redirect('/todo');
         }
     }
